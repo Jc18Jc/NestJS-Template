@@ -1,6 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
 import { map, Observable } from "rxjs";
 import { winstonLogger } from "src/loggers/winston-logger";
+import { maskEmail } from "../methods";
 
 @Injectable()
 export class SuccessInterceptor implements NestInterceptor {
@@ -11,7 +12,9 @@ export class SuccessInterceptor implements NestInterceptor {
     const user = request?.user;
     let logText = `ip = ${ip}, [${method}] path = ${url}`;
     if (user) {
-      logText += `, USER EMAIL = ${user?.email || 'unknown'}, AUTH ID = ${user?.id || 'unknown' }`;
+      const maskedEmail = maskEmail(user?.email) || 'unknown';
+
+      logText += `, USER EMAIL = ${maskedEmail}, USER ID = ${user?.id || 'unknown' }`;
     }
 
     winstonLogger.info(logText);

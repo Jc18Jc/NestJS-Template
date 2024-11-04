@@ -3,7 +3,7 @@ import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
 import { Public } from "src/utils/setMeta";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { JwtTokenDto } from "./dto/jwt-token.dto";
+import { AccessTokenDto } from "./dto/access-token.dto";
 
 @Controller('auth')
 @Public()
@@ -12,21 +12,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  @ApiResponse({ status: 201, type: JwtTokenDto })
+  @ApiResponse({ status: 201, type: AccessTokenDto })
   @ApiOperation({ summary: '회원가입' })
-  async signup(@Body() loginRequestDto: LoginRequestDto): Promise<JwtTokenDto> {
-    const jwtToken = await this.authService.jwtSignup(loginRequestDto);
+  async signup(@Body() loginRequestDto: LoginRequestDto): Promise<AccessTokenDto> {
+    const accessToken = await this.authService.signup(loginRequestDto);
 
-    return { jwtToken };
+    return { accessToken };
   }
 
   @Post('signin')
-  @ApiResponse({ status: 201, type: JwtTokenDto })
+  @ApiResponse({ status: 201, type: AccessTokenDto })
   @ApiOperation({ summary: '로그인' })
-  async login(@Body() loginRequestDto: LoginRequestDto): Promise<JwtTokenDto> {
-    const jwtToken = await this.authService.jwtLogin(loginRequestDto);
+  async login(@Body() loginRequestDto: LoginRequestDto): Promise<AccessTokenDto> {
+    const accessToken = await this.authService.login(loginRequestDto);
 
-    return { jwtToken };
+    return { accessToken };
   }
   
 }

@@ -1,4 +1,4 @@
-import { HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginRequestDto } from './dto/login-request.dto';
 import * as bcrypt from 'bcrypt';
@@ -11,13 +11,13 @@ export class AuthService {
   constructor(private readonly prismaService: PrismaService, private readonly jwtService: JwtService) {}
 
   // 회원가입
-  async jwtSignup(loginRequestDto: LoginRequestDto): Promise<string> {
+  async signup(loginRequestDto: LoginRequestDto): Promise<string> {
     const { email, password } = loginRequestDto;
 
     const auth = await this.findByEmail(email);
     
     if(auth) {
-      throw new HttpException('Email already exists', 400);
+      throw new HttpException('Email already exists', HttpStatus.BAD_REQUEST);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -33,31 +33,32 @@ export class AuthService {
   }
 
   // 로그인
-  async jwtLogin(loginRequestDto: LoginRequestDto): Promise<string> {
+  async login(loginRequestDto: LoginRequestDto): Promise<string> {
     const { email, password } = loginRequestDto;
 
     const auth = await this.findByEmail(email);
 
     if (!auth) {
-      throw new UnauthorizedException('Invalid email');
+      throw new HttpException('Invalid email', HttpStatus.BAD_REQUEST);
     }
 
     const isPasswordValid: boolean = await bcrypt.compare(password, auth.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
     }
 
     return this.generateJwtToken(email);
   }
 
   // auth 유효성 검사
-  async validateByEmail(email: string): Promise<string> {
-    const isExist = await this.findByEmail(email);
-    if (isExist) {
-      return email;
-    }
-    throw new UnauthorizedException();
+  async validateByEmail(email: string): Promise<number> {
+    return this.findByEmail(email).then(auth => {
+      if (auth) {
+        return auth.id;
+      }
+      throw new HttpException('Unauthorized access', HttpStatus.UNAUTHORIZED);
+    });
   }
 
   // auth 조회

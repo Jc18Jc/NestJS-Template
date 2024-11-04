@@ -6,8 +6,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { CustomExceptionFilter } from './utils/exception/exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { SuccessInterceptor } from './utils/interceptiors/success.interceptor';
+import { SuccessInterceptor } from './utils/interceptors/success.interceptor';
 import * as expressBasicAuth from 'express-basic-auth';
+import { ValidationException } from './utils/exception/validation.exception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,7 +24,10 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true
       },
-      whitelist: true
+      whitelist: true,
+      exceptionFactory: () => {
+        return new ValidationException();
+      }
     }),
   );
   

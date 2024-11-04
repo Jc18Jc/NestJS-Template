@@ -3,12 +3,13 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
-  HttpStatus,
-  UnauthorizedException
+  HttpStatus
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { winstonLogger } from 'src/loggers/winston-logger';
+import { UserDto } from 'src/auth/dto/user.dto';
+import { maskEmail } from '../methods';
 
 @Catch()
 export class CustomExceptionFilter implements ExceptionFilter {
@@ -25,13 +26,10 @@ export class CustomExceptionFilter implements ExceptionFilter {
       // HttpException 처리
       status = exception.getStatus();
       message = exception.message;
+      // BadRequestException에 대한 추가 처리
     } else if (exception instanceof PrismaClientKnownRequestError) {
       // Prisma 예외 처리
       status = HttpStatus.BAD_REQUEST;
-      message = exception.message;
-    } else if (exception instanceof UnauthorizedException) {
-      // UnauthrizedException 처리
-      status = HttpStatus.UNAUTHORIZED;
       message = exception.message;
     } else if (exception instanceof Error) {
       // 기타 Error 처리
@@ -45,7 +43,9 @@ export class CustomExceptionFilter implements ExceptionFilter {
 
     const user = request?.user;
     const path = request?.url;
-    winstonLogger.error(`ip: ${ip}, path: ${path}, status: ${status}, exception: ${exception}, USER EMAIL = ${user?.email || 'unknown'}`);
+    const maskedEmail = maskEmail(user?.email) || 'unknown';
+
+    winstonLogger.error(`ip: ${ip}, path: ${path}, status: ${status}, exception: ${exception}, USER EMAIL = ${maskedEmail}, USER ID = ${user?.id || 'unknown'}`);
     response.status(status).json({
       success: false,
       statusCode: status,
@@ -54,4 +54,6 @@ export class CustomExceptionFilter implements ExceptionFilter {
       message
     });
   }
+
+
 }
